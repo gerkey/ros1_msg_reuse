@@ -467,7 +467,7 @@ Indigo from the OSRF packages, then you would do:
 
 1. Set the required variables manually. Refer to the C++ part of this document.
 
-### Python dynamic configuration
+### Experimental : Python dynamic configuration
 Sourcing a bash file is something you might not want to do for multiple reasons :
 
 - impractical when working with multiple terminals and virtual environments that already do their own magic.
@@ -475,8 +475,8 @@ Sourcing a bash file is something you might not want to do for multiple reasons 
 - python is cross-platform, no reason for a python program to tie itself to a specific shell implementation to be able to run
 - your python code should work "out of the box", no tricky configuration needed
 
-The other option is to use [pyros-setup](https://github.com/asmodehn/pyros-setup).
-This package is already usable, and is still being developed.
+The other option is to use [pyros-setup](https://github.com/pyros-dev/pyros-setup).
+This package is already usable and tested.
 It allows to do a dynamic ROS setup from python at import time. 
 
 ## Special consideration for development
@@ -486,14 +486,18 @@ there are three options :
 - modify your normal python package to become a ROS python package using catkin as explained in the [rospy_tutorials](http://wiki.ros.org/rospy_tutorials/Tutorials/Makefile)
 Note that you will need to do that for __all__ its dependencies, in order to use the catkin package dependency system.
 - manage your virtual environment and your catkin workspace(s) in parallel, while keeping in mind that the packages accessible from each environments can be different
-- add a some cmake glue, using [catkin_pure_python](https://github.com/asmodehn/catkin_pure_python).
+- add a some cmake glue, using [catkin_pip](https://github.com/pyros-dev/catkin_pip).
 This package is already usable, and is still being developed.
 It allows catkin to use pip and your requirements.txt & setup.py files to install all your dependencies in the catkin workspace, as if it were a virtualenv.
 
+### Experimental : No catkin for python
+If however you want to get completely get rid of catkin in your ROS python toolchain you can have a look at [rosimport](https://github.com/pyros-dev/rosimport).
+This package is already usable and tested.
+It allows to do a dynamic ROS message code generation from python at import time. 
 
 ## Using pre-existing ROS messages in Python
 Using messages defined in an installed ROS package from your Python program
-doesn't require any special configuration. As long as your `PYTHONPATH` points
-to your ROS installation, things like `from std_msgs.msg import String` will
+doesn't require any special configuration. As long as your `sys.path` points
+to your ROS installation, and where the message generated code is located, things like `from std_msgs.msg import String` will
 just work.
 
