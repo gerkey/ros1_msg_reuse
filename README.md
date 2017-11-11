@@ -36,7 +36,7 @@ detailed instructions in each example in this repository.
 We need to install a few system dependencies (on Ubuntu this step is done
 automatically by the dependencies encoded in the binary packages). We get
 those dependencies from a combination of brew and pip:
-~~~
+```
 # <Install brew and configure your environment to include /usr/local (http://brew.sh)>
 # Update brew and add a tap that will provide some ROS-specific dependencies
 brew update
@@ -51,17 +51,19 @@ sudo -H pip install -U wstool rosinstall rosinstall_generator rospkg catkin-pkg 
 # package-specific system dependencies are satisfied
 sudo rosdep init
 rosdep update
-~~~
+```
 
 # Get the code (all platforms)
 Whatever platform you're on, you'll need to clone this repo:
-~~~
+```
 git clone https://github.com/gerkey/ros1_external_use
-~~~
+```
 
 # Preliminary documentation
 Here we begin to document in a definitive manner the tools and techniques that
 are being demonstrated in the examples.
+
+# C++
 
 ## Build system choices
 We recommend using either CMake or make. But you should be able to port from
@@ -144,12 +146,12 @@ ROS packages follow the CMake configuration protocol, which means that you can
 just `find_package()` each one and then use the resulting variables that are
 defined. To build an executable that relies on package `foo`, you would refer to
 `foo_INCLUDE_DIRS` and `foo_LIBRARIES`:
-~~~
+```
 find_package(foo REQUIRED)
 include_directories(${foo_INCLUDE_DIRS})
 add_executable(myprogram myprogram.cpp)
 target_link_libraries(myprogram ${foo_LIBRARIES})
-~~~
+```
 Notes:
 * You don't have to call `link_directories(${foo_LIBRARY_DIRS})` because ROS
 packages follow the recommended practice of returning absolute paths in
@@ -162,14 +164,14 @@ assets.
 ROS packages provide `pkg-config` files that let you get build flags from make
 (or from a shell script or the command line, or wherever). The equivalent of the
 CMake example using package `foo` looks like this in make:
-~~~
+```
 foo_cflags = $(shell pkg-config --cflags foo)
 foo_libs = $(shell pkg-config --libs foo)
 # Work around a known issue with new linkers that don't accept -l:/path/to/lib
 foo_libs_nocolon = $(subst -l:,,$(foo_libs))
 myprogram: myprogram.cpp
 	$(CXX) -Wall -o $@ $(foo_cflags) $< $(foo_libs_nocolon)
-~~~
+```
 Notes:
 * You can get just the include dirs by calling `pkg-config --cflags-only-I foo`.
 * You might also call `pkg-config --variable=prefix foo` if you need to get the
@@ -179,12 +181,6 @@ directory containing the package to locate other assets.
 If you're using messages defined in an installed ROS package from your C++
 program, then you just need to follow the steps from the previous section to
 build your program with the flags provided by that package.
-
-## Using pre-existing ROS messages in Python
-Using messages defined in an installed ROS package from your Python program
-doesn't require any special configuration. As long as your `PYTHONPATH` points
-to your ROS installation, things like `from std_msgs.msg import String` will
-just work.
 
 ## Doing code generation for custom messages
 If you define your own ROS messages by writing `.msg` files in your own
@@ -201,7 +197,7 @@ Calling message code generators from CMake is simplified because the `genmsg`
 package provides macros to help. Let's say that you have two custom messages,
 `Foo.msg` and `Bar.msg`, and that they in turn use messages from two installed
 ROS packages `foo_msgs` and `bar_msgs`. Then you would do message generation like so:
-~~~
+```
 # Give the project a name (good practice in general and required by the code
 # generators to decide how to namespace and where to produce their outputs).
 project(myproject)
@@ -218,16 +214,16 @@ find_package(bar_msgs REQUIRED)
 add_message_files(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} FILES Foo.msg Bar.msg)
 # Do code generation, specifying which other message packages we depend on.
 generate_messages(DEPENDENCIES foo_msgs bar_msgs)
-~~~
+```
 That's code generation all set up. Now let's build a program that uses the
 output:
-~~~
+```
 # Build a program that uses the custom messages
 add_executable(use_custom_msg use_custom_msg.cpp)
 # Ensure that code generation happens before building use_custom_msg by
 # depending on a special target created by generate_messages().
 add_dependencies(use_custom_msg ${PROJECT_NAME}_generate_messages)
-~~~
+```
 Notes:
 * The C++ code for `Foo.msg` will be in `devel/include/myproject/Foo.h` and will define a
 message class `myproject::Foo`. Your include directories are automatically
@@ -245,7 +241,7 @@ Compared to CMake, it takes a bit more effort to call the message code
 generators from make, but it's definitely doable. Taking the example from above
 (`Foo.msg` and `Bar.msg` depend on messages from `foo_msgs` and `bar_msgs`),
 here's what you would do:
-~~~
+```
 # Give the project a name (good practice in general and required by the code
 # generators to decide how to namespace and where to produce their outputs).
 project = myproject
@@ -285,18 +281,18 @@ $(project)/msg/_%.py: %.msg
 # Extra rule for generating the __init__.py module file
 $(msgs_py_init): $(msgs_py)
 	$(gencpp_dir)/lib/genpy/genmsg_py.py --initpy -p $(project) -o $(project)/msg
-~~~
+```
 That's code generation all set up. Now let's build a program that uses the
 output:
-~~~
+```
 # Build an executable that uses locally defined messages. Note that it depends
 # on the output from the C++ generator.
 use_custom_msg: use_custom_msg.cpp $(msgs_cpp)
 	$(CXX) -Wall -o $@ $(foo_msgs_includes) $(bar_msgs_includes) -I. $<
-~~~
+```
 Further, let's show how to install our custom messages, both the raw input and
 the generated output:
-~~~
+```
 install_prefix ?= /tmp/$(project)
 install: all
 	# As usual, the python install location might vary from platform to platform
@@ -311,7 +307,7 @@ install: all
 	cp -a $(msgs_py) $(msgs_py_init) $(install_prefix)/lib/python2.7/site-packages/$(project)/msg
 	# Drop an empty `__init__.py` file to make `myproject` into a Python module
 	touch $(install_prefix)/lib/python2.7/site-packages/$(project)/__init__.py
-~~~
+```
 
 ## Doing code generation for custom services
 Code generation for services is very similar to how it's done for messges. Here
@@ -397,12 +393,12 @@ during installation.
 
 For example, let's say that you build two nodes, `talker`, and `listener`, and
 you have a launch file, `talker_listener.launch` that refers to them like so:
-~~~
+```
 <launch>
   <node pkg="myproject" type="talker" name="talker" output="screen"/>
   <node pkg="myproject" type="listener" name="listener" output="screen"/>
 </launch>
-~~~
+```
 What's required to run that launch file, so that `roslaunch` can find your
 programs? We need to do a few things:
 
@@ -415,7 +411,7 @@ is included in the `CMAKE_PREFIX_PATH`, then this marker file will cause
 
 ### make
 Here's what the install rule could look like:
-~~~
+```
 # Assume that you have earlier rules that will build the talker and listener
 # executables
 install: talker listener
@@ -434,7 +430,7 @@ install: talker listener
 	# rosrun/roslaunch to look in <prefix>/lib/project for executables
 	# for each <prefix> in CMAKE_PREFIX_PATH
 	touch $(install_prefix)/.catkin
-~~~
+```
 Then, after you `make install`, if you have the run-time environment
 configuration set up properly, you should be able to do:
 
@@ -443,3 +439,65 @@ configuration set up properly, you should be able to do:
 Or, equivalently:
 
     roslaunch <install_prefix>/share/myproject/launch/talker_listener.launch
+
+# Python
+Python does not require a build system per say, since it is an interpreted language.
+However each python package has dependencies to retrieve before being able to run.
+
+## Retrieving dependencies
+Some dependencies are system dependencies, and you can fetch them using your system package manager.
+ROS packages that you may want to use as dependency fall into this category.
+Some dependencies are pip dependencies, and the version specified is are fetched usually via pip into a virtualenv.
+Your virtualenv need to be created with `--system-site-packages` for you python program to be able to access ROS packages outside.
+
+## Environment setup
+
+As a user of ROS packages you need to choose one of the following for your python package to be able to communicate with ROS:
+- bash preconfiguration, ROS-style
+- python dynamic configuration.
+
+### BASH Preconfiguration
+Following the same setup as for C++ will get things to work. That is one of the two following options :
+
+1. Source the setup file that's provided with your installation. This is the
+easiest way to get the environment configuration. E.g., if you are using ROS
+Indigo from the OSRF packages, then you would do:
+
+        . /opt/ros/indigo/setup.sh
+
+1. Set the required variables manually. Refer to the C++ part of this document.
+
+### Experimental : Python dynamic configuration
+Sourcing a bash file is something you might not want to do for multiple reasons :
+
+- impractical when working with multiple terminals and virtual environments that already do their own magic.
+- what about platforms that don't have bash at all ?
+- python is cross-platform, no reason for a python program to tie itself to a specific shell implementation to be able to run
+- your python code should work "out of the box", no tricky configuration needed
+
+The other option is to use [pyros-setup](https://github.com/pyros-dev/pyros-setup).
+This package is already usable and tested.
+It allows to do a dynamic ROS setup from python at import time. 
+
+## Special consideration for development
+If you want to be able to work simultaneously on normal python packages and ROS python packages,
+there are three options :
+
+- modify your normal python package to become a ROS python package using catkin as explained in the [rospy_tutorials](http://wiki.ros.org/rospy_tutorials/Tutorials/Makefile)
+Note that you will need to do that for __all__ its dependencies, in order to use the catkin package dependency system.
+- manage your virtual environment and your catkin workspace(s) in parallel, while keeping in mind that the packages accessible from each environments can be different
+- add a some cmake glue, using [catkin_pip](https://github.com/pyros-dev/catkin_pip).
+This package is already usable, and is still being developed.
+It allows catkin to use pip and your requirements.txt & setup.py files to install all your dependencies in the catkin workspace, as if it were a virtualenv.
+
+### Experimental : No catkin for python
+If however you want to get completely get rid of catkin in your ROS python toolchain you can have a look at [rosimport](https://github.com/pyros-dev/rosimport).
+This package is already usable and tested.
+It allows to do a dynamic ROS message code generation from python at import time. 
+
+## Using pre-existing ROS messages in Python
+Using messages defined in an installed ROS package from your Python program
+doesn't require any special configuration. As long as your `sys.path` points
+to your ROS installation, and where the message generated code is located, things like `from std_msgs.msg import String` will
+just work.
+
